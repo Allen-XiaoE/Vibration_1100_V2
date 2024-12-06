@@ -3,4 +3,5 @@
 /dist
 *.spec
 *.7z
+*.zip
 /DATA

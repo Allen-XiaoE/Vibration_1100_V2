@@ -20,11 +20,11 @@ class UI(QMainWindow, Ui_MainWindow):
         self.vibration = Vibration(self.rws,self.dir)
         self.vibration.update_status.connect(self.update_status)
         self.vibration.error.connect(self.error)
-        self.vibration.rapid_manual_start.connect(self.rapid_manual_start)
+        self.vibration.rapid_manual_start.connect(self.rapid_manual_start_vib)
         self.goto_syncpos = GotoSyncPos(self.rws,self.dir)
         self.goto_syncpos.update_status.connect(self.update_status)
         self.goto_syncpos.error.connect(self.error)
-        self.goto_syncpos.rapid_manual_start.connect(self.rapid_manual_start)
+        self.goto_syncpos.rapid_manual_start.connect(self.rapid_manual_start_gosyncpos)
 
     def __get_config(self):
         with open('setting.json') as f:
@@ -40,13 +40,21 @@ class UI(QMainWindow, Ui_MainWindow):
     def error(self,message):
         QMessageBox.warning(self, "Warning", message)
     
-    def rapid_manual_start(self,message):
+    def rapid_manual_start_vib(self,message):
         reply = QMessageBox.question(self,'Confirm',message,QMessageBox.Yes | QMessageBox.No,  
                                      QMessageBox.No)
         if reply == QMessageBox.Yes:
             self.vibration.continue_thread(rapid_start=True)
         else:
             self.vibration.continue_thread(rapid_start=False)
+
+    def rapid_manual_start_gosyncpos(self,message):
+        reply = QMessageBox.question(self,'Confirm',message,QMessageBox.Yes | QMessageBox.No,  
+                                     QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            self.goto_syncpos.continue_thread(rapid_start=True)
+        else:
+            self.goto_syncpos.continue_thread(rapid_start=False)
 
     def vibration_test(self):
         self.status_text.clear()
@@ -147,14 +155,18 @@ class Vibration(QThread):
             return
         
         if self.rws.excuseRapid() != "OK":
-            self.error.emit("Rapid无法执行!")
-            return
-        
-        if self.rws.GETrapidstatus() == "stopped":
+            # self.error.emit("Rapid无法执行!")
+            # return
             self.rapid_manual_start.emit("请在TPU上点击开始程序,完成请点Yes!")
             self.exec_()
             if not self.rapid_start:
                 return
+        
+        # if self.rws.GETrapidstatus() == "stopped":
+        #     self.rapid_manual_start.emit("请在TPU上点击开始程序,完成请点Yes!")
+        #     self.exec_()
+        #     if not self.rapid_start:
+        #         return
         self.update_status.emit("程序VibrationTest运行开始")
            
         while self.rws.GETrapidstatus() != "stopped":
@@ -221,7 +233,6 @@ class GotoSyncPos(QThread):
             module = f'{self.dir}//RAPID//IRB1100_Vibration_Test_475 with TSV autolog.modx'
             robot_name = 'IRB1100_0.47'
         else:
-            # self.update_status.emit("机器人型号不是IRB1100 0.58M 或者 IRB1100 0.47M,请检查机器人型号!")
             self.error.emit("机器人型号不是IRB1100 0.58M 或者 IRB1100 0.47M,请检查机器人型号!")
             return
         self.update_status.emit(f"机器人型号:{robot_name}")
@@ -242,14 +253,16 @@ class GotoSyncPos(QThread):
             return
         
         if self.rws.excuseRapid() != "OK":
-            self.error.emit("Rapid无法执行!")
-            return
-        
-        if self.rws.GETrapidstatus() == "stopped":
             self.rapid_manual_start.emit("请在TPU上点击开始程序,完成请点Yes!")
             self.exec_()
             if not self.rapid_start:
                 return
+        
+        # if self.rws.GETrapidstatus() == "stopped":
+        #     self.rapid_manual_start.emit("请在TPU上点击开始程序,完成请点Yes!")
+        #     self.exec_()
+        #     if not self.rapid_start:
+        #         return
         self.update_status.emit("程序gotosyncpos运行开始")
            
         while self.rws.GETrapidstatus() != "stopped":
