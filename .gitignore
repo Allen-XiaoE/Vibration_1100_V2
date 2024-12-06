@@ -1,0 +1,6 @@
+/build
+/__pycache__
+/dist
+*.spec
+*.7z
+/DATA
